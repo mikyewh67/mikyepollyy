@@ -3,7 +3,7 @@
 const ORIGIN='https://gamma-api.polymarket.com';
 const PATHS=new Set(['/sports','/events','/markets','/tags']);
 const US_PATHS=new Set(['/v1/events']);
-const ALLOWED_PARAMS=new Set(['active','closed','limit','offset','order','ascending','tag_id','tag_slug','id','slug','condition_id','series_id','end_date_min','end_date_max','start_date_min','start_date_max']);
+const ALLOWED_PARAMS=new Set(['active','closed','limit','offset','order','ascending','tag_id','tag_slug','id','slug','condition_id','series_id','end_date_min','end_date_max','start_date_min','start_date_max','tagSlug','endDateMin']);
 export default {
   async fetch(request,env,ctx){
     if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors()});
