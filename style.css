@@ -53,3 +53,6 @@
 .settings-advanced[open]>summary{margin-bottom:12px}
 .bottom-nav .nav-item{min-width:0}
 @media(max-width:680px){.home-hero{flex-direction:column;padding:20px}.home-hero .home-hero-side{align-self:stretch;min-width:unset;border-top:1px solid #40635d;padding-top:15px}.home-hero .home-hero-side strong{font-size:27px}.home-columns{grid-template-columns:1fr}.home-shortcuts button{min-width:95px;flex-basis:26%}.home-combo-cta span{font-size:16px}.home-combo-cta small{font-size:10px}.home-connection{align-items:flex-start;flex-direction:column}.home-connection button{width:100%}}
+
+/* Automatic recent-result comparison */
+#autoResearchDialog{width:min(94vw,570px);max-height:88dvh;overflow-y:auto;padding:0;border:1px solid #38536e;background:#101d2f;color:#edf6ff;border-radius:16px}#autoResearchDialog::backdrop{background:rgba(0,4,12,.78)}.recent-table{display:grid;grid-template-columns:minmax(85px,.7fr) repeat(2,minmax(100px,1fr));align-items:center;gap:0;margin:12px 0;border-radius:10px;overflow:hidden}.recent-table>*{padding:11px 7px;font-size:12px;border-bottom:1px solid #304761;overflow-wrap:anywhere}.recent-table b{background:#243953;font-size:11px}.recent-table span:first-child{font-weight:700}
