@@ -10,7 +10,6 @@ function allow(p){return chosen==='All'||p.sport===chosen||(chosen==='CFB'&&p.sp
 function active(){return $('sportFilters')?.querySelector('.active')?.dataset.sport||chosen;}
 function render(){
   const debug=window.EdgeboardDebug;if(!debug?.rawMarkets)return;
-  chosen=active();
   const all=debug.rawMarkets.map(debug.screenOne);
   const visible=all.filter(p=>allow(p)&&p.open!==false&&(!p.start||+new Date(p.start)>=Date.now()||(p.live&&+new Date(p.start)>=Date.now()-8*3600000))).filter(p=>!$('browsePassed')?.checked||p.passed).filter(p=>!$('gameSearch')?.value||[p.sport,p.league,...(p.teams||[])].join(' ').toLowerCase().includes($('gameSearch').value.toLowerCase())).sort((a,b)=>(a.start?+new Date(a.start):Infinity)-(b.start?+new Date(b.start):Infinity));
   if($('browseCount'))$('browseCount').textContent=visible.length+' shown · '+all.length+' markets';
@@ -39,6 +38,7 @@ function adapt(ev,source,tag){
       return x;
     });
   }
+  out._edgeSource=source;
   return out;
 }
 function list(v){return Array.isArray(v)?v:Array.isArray(v?.events)?v.events:Array.isArray(v?.data)?v.data:[];}
@@ -53,9 +53,8 @@ async function scan(){
   const us=proxy?proxy+'/us':'https://gateway.polymarket.us';
   const age=new Date(Date.now()-8*3600000).toISOString();
   const gargs='active=true&closed=false&end_date_min='+encodeURIComponent(age)+'&order=endDate&ascending=true';
-  chosen=active();
   const tags=chosen==='All'?['sports','tennis','table-tennis','esports','nfl','ncaaf','nba','ufc','soccer']:['sports',...(slugs[chosen]||[chosen.toLowerCase()])];
-  const jobs=[{source:'us',tag:'US',url:us+'/v1/events?active=true&limit=120&offset=0'},...[...new Set(tags)].map(tag=>({source:'gamma',tag,url:gamma+'/events?tag_slug='+encodeURIComponent(tag)+'&'+gargs+'&limit='+(tag==='sports'?160:75)}))];
+  const jobs=[{source:'us',tag:'US',url:us+'/v1/events?active=true&closed=false&limit=100&offset=0'},...(chosen==='All'?[{source:'us',tag:'US',url:us+'/v1/events?active=true&closed=false&limit=100&offset=100'}]:[{source:'us',tag:'US',url:us+'/v1/events?active=true&closed=false&limit=100&tagSlug='+encodeURIComponent((slugs[chosen]||[chosen.toLowerCase()])[0])}]),...[...new Set(tags)].map(tag=>({source:'gamma',tag,url:gamma+'/events?tag_slug='+encodeURIComponent(tag)+'&'+gargs+'&limit='+(tag==='sports'?160:75)}))];
   let i=0,finished=0,errors=[];
   const seenEvents=new Map(),normalise=window.EdgeboardDebug.normaliseEvent;
   function process(job,payload){
@@ -63,7 +62,7 @@ async function scan(){
       const key=job.source+':'+(original.id||original.slug);if(!original.id&&!original.slug)continue;
       if(!seenEvents.has(key))seenEvents.set(key,adapt(original,job.source,job.tag));
     }
-    const markets=[];for(const event of seenEvents.values())markets.push(...normalise(event));
+    const markets=[];for(const event of seenEvents.values()){const items=normalise(event);if(event._edgeSource==='us')for(const market of items)market.url='https://polymarket.us/event/'+encodeURIComponent(event.slug||'');markets.push(...items);}
     window.EdgeboardDebug.setMarkets(markets);
     render();
     if(info)info.textContent=seenEvents.size+' events checked · '+markets.length+' markets · '+finished+'/'+jobs.length+' feeds complete. All games also shows markets rejected by your pick rules.';
