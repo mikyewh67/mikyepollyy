@@ -94,7 +94,7 @@
   async function copy(i){
     const s=proposals[i];if(!s)return;
     const lines=s.legs.map((m,n)=>`${n+1}. ${m.teams[m.selectedSide]} to win — ${m.teams.join(' vs ')} — ${m.sport} — ${timeString(m.start)} — reference ${(1/m.prices[m.selectedSide]).toFixed(2)}x`);
-    const txt=`EDGEB0ARD QUICK COMBO — DRAFT, NOT A BET\n${lines.join('\n')}\nApprox ${s.multiplier.toFixed(2)}x from market-price product, not a native quote. Open Polymarket US app → Build a Combo → find these markets and verify each side and live quote.`;
+    const txt=`EDGEBOARD QUICK COMBO — DRAFT, NOT A BET\n${lines.join('\n')}\nApprox ${s.multiplier.toFixed(2)}x from market-price product, not a native quote. Open Polymarket US app → Build a Combo → find these markets and verify each side and live quote.`;
     try{await navigator.clipboard.writeText(txt);$('qcState').textContent='Draft picks copied. Verify all legs in the Polymarket US app.';}catch{$('qcState').textContent=txt;}
   }
   function record(i){
