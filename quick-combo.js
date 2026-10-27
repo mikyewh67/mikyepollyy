@@ -77,7 +77,7 @@
     return {markets,proposals:result};
   }
   function display(){
-    const {markets,proposals:found}=generate();
+    const target=Number($('qcTarget')?.value)||3;const {markets,proposals:found}=generate();
     proposals=found;generatedAt=timestamp();
     const state=$('qcState'),box=$('qcResults');
     if(!state||!box)return;
@@ -85,7 +85,7 @@
     const options=data()?.settings||{};
     const stake=Number(options.staking==='branch'?options.branchStake:options.flatStake)||5;
     if(!found.length){
-      box.innerHTML=`<div class="empty-state"><h3>No verified ${escapeHTML($('qcSport')?.value||'')} combo matches near ${target}× in this window</h3><p>Try All sports or extend the Picks start window. No matches or odds are invented. Check connection status and the Rejected list.</p></div>`;
+      box.innerHTML=`<div class="empty-state"><h3>No matching ${escapeHTML($('qcSport')?.value||'')} combo drafts near ${target}× in this window</h3><p>Try All sports or extend the Picks start window. No matches or odds are invented. Check connection status and the Rejected list.</p></div>`;
       return;
     }
     box.innerHTML=found.map((s,i)=>{
