@@ -36,7 +36,7 @@
   function listOf(payload){if(Array.isArray(payload))return payload;if(Array.isArray(payload?.events))return payload.events;if(Array.isArray(payload?.data))return payload.data;return[];}
   async function pool(jobs,concurrency=6){let at=0;let results=[];async function worker(){while(at<jobs.length){const i=at++;try{results[i]=await jobs[i]();}catch(e){results[i]={error:String(e.message||e)};}}}await Promise.all(Array.from({length:Math.min(concurrency,jobs.length)},worker));return results;}
   function parseMetaSports(items){const picked=[];for(const e of listOf(items)){const name=displaySport(e.sport||e.slug||e.name);const ids=String(e.tags||'').split(',').map(s=>s.trim()).filter(x=>/^\d+$/.test(x));if(!name||!ids.length)continue;picked.push({name,ids});}return picked;}
-  async function scanMarkets(){if(scanning)return;scanning=true;$('refreshBtn').disabled=true;setPill('Loading','neutral');$('feedNotice').textContent='Scanning near-term sports events and market prices…';$('feedNotice').className='notice';try{
+  async function scanMarkets(){if(window.EdgeV3?.scan)return window.EdgeV3.scan();if(scanning)return;scanning=true;$('refreshBtn').disabled=true;setPill('Loading','neutral');$('feedNotice').textContent='Scanning near-term sports events and market prices…';$('feedNotice').className='notice';try{
       let sports=[],sportError='';try{sports=parseMetaSports(await request('/sports'));}catch(e){sportError=String(e.message||e);}const jobs=[];
       // Dynamic tag discovery: scan every sport published by the Gamma sports metadata endpoint.
       const tagOwners=new Map();
@@ -212,6 +212,6 @@
     window.addEventListener('focus',()=>{if(now()-lastScan>120000)scanMarkets();});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&now()-lastScan>120000)scanMarkets();});}
   function startup(){installTelegram();registerWorker();setupEvents();fillSettings();renderWindow();refreshView();renderTracker();renderGoals();setInterval(updateCountdowns,1000);setInterval(()=>{if(!document.hidden&&now()-lastScan>=60000)scanMarkets();},60000);scanMarkets();}
   // Used by local smoke tests without adding analytics or third-party code.
-  window.EdgeboardDebug={screenOne,normaliseEvent,parseJSONArray,readPaste,ledger,get data(){return data;},get passed(){return passed;}};
+  window.EdgeboardDebug={screenOne,normaliseEvent,parseJSONArray,readPaste,ledger,setMarkets(items){rawMarkets=dedupe(items);lastScan=now();hasScanned=true;refreshView();},get rawMarkets(){return rawMarkets;},get data(){return data;},get passed(){return passed;}};
   startup();
 })();
