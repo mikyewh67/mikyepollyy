@@ -14,7 +14,7 @@ const totalTransfers=transfers.filter(t=>t.source==='bankroll').reduce((s,t)=>s+
 const estimate=(Number(state.settings?.startingBankroll)||0)-placed+returned-totalTransfers;
 const net=returned-settledStake;
 const pending=bets.filter(b=>b.status==='pending');
-$('homeBankroll').textContent=money(estimate);
+$('homeBankroll').textContent=money(estimate);$('homeWonTotal').textContent=money(returned);
 $('homePL').textContent=(net>0?'+':'')+money(net);
 $('homePL').className='home-metric '+(net>0?'positive':net<0?'negative':'');
 $('homeWins').textContent=settled.filter(b=>b.status==='won').length+' won / '+settled.filter(b=>b.status==='lost').length+' lost';
