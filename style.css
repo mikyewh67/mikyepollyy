@@ -59,3 +59,6 @@
 
 @media(min-width:681px){.home-hero>div:first-child{flex:1}.home-hero .home-hero-side{flex:0 1 210px}.home-hero .home-hero-side strong{font-size:clamp(24px,3vw,34px)}}
 @media(max-width:680px){.home-hero .home-hero-side+.home-hero-side{border-top:1px solid #40635d;padding-top:14px}}
+
+/* Gamma all-events pagination */
+.api-time-row{margin-top:11px;margin-bottom:0;justify-content:flex-start;align-items:center;gap:12px;flex-wrap:wrap}.api-time-row label{font-size:12px;color:#b5c5d9}.api-time-row select{background:#14263b;color:#f0f6fc;border:1px solid #35516c;border-radius:10px;padding:10px;min-height:42px;font-size:13px}.api-scan-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0 19px;flex-wrap:wrap}.api-scan-tools small{font-size:11px;color:#9fb4cc;line-height:1.45}.api-scan-tools button,#moreVisibleGames{min-height:42px}#moreVisibleGames{width:100%}.browse-game .row-actions{margin-top:10px}.browse-game .row-actions button{min-height:37px} .browse-game .row-actions a{align-self:center;font-size:12px}@media(max-width:600px){.api-scan-tools button{width:100%}}
