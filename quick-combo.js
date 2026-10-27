@@ -12,13 +12,20 @@
   function marketSource(m){try{const u=new URL(m.url||'');return /(^|\.)polymarket\.us$/.test(u.hostname)?'US venue':'international reference'}catch{return 'no verified market URL'}}
   function eligibleMarkets(){
     const debug=window.EdgeboardDebug;if(!debug)return [];
-    const all=Array.isArray(debug.passed)?debug.passed:[];
+    // Screen all discovered winner markets. Missing execution metadata is allowed ONLY
+    // as an explicitly unverified draft, never promoted to a researched betting edge.
+    const all=[...(debug.rawMarkets||[]),...(debug.data?.manual||[])].map(debug.screenOne);
     const chosen=$('qcSport')?.value||'All';
     const horizon=(Number(data()?.settings?.window)||3)*3600000,now=timestamp();
     return all.filter(m=>{
       const sp=String(m.sport||'');
       if(chosen!=='All' && (chosen==='CFB'?!['NCAAF','CFB'].includes(sp):sp!==chosen))return false;
-      if(!m.open||!m.passed||m.teams?.length!==2||m.prices?.length!==2||m.unverified)return false;
+      if(!m.open||m.technicalReject||m.teams?.length!==2||m.prices?.length!==2)return false;
+      if(!m.prices.every(v=>Number.isFinite(v)&&v>0&&v<1))return false;
+      if(!(m.sum>=.99&&m.sum<=1.01))return false;
+      const thresholds=data()?.settings||{};
+      if(m.liquidity!==null&&m.liquidity!==undefined&&m.liquidity<Number(thresholds.minLiquidity||0))return false;
+      if(m.spread!==null&&m.spread!==undefined&&m.spread*100>Number(thresholds.maxSpreadCents??3))return false;
       const sel=Number.isInteger(m.selectedSide)?m.selectedSide:m.favorite;
       if(sel!==0 && sel!==1)return false;
       const price=m.prices[sel];
@@ -43,7 +50,8 @@
           const userResearched=legs.filter(p=>p.edge>0).length;
           const averageQuality=legs.reduce((s,p)=>s+(p.confidence==='High'?1:p.confidence==='Med'?.5:0),0)/legs.length;
           const hasUSPrice=legs.filter(m=>m.source==='us'||String(m.url||'').includes('polymarket.us')).length;
-          const score=Math.abs(Math.log(multiplier/target))*5 + legs.length*.15 + age*.22 - userResearched*.12 - averageQuality*.25 - hasUSPrice*.08;
+          const uncertain=legs.filter(m=>m.unverified).length;
+          const score=Math.abs(Math.log(multiplier/target))*5 + legs.length*.15 + age*.22 - userResearched*.12 - averageQuality*.25 - hasUSPrice*.08+uncertain*.35;
           suggestions.push({id:legs.map(m=>m.id).sort().join('|'),legs:[...legs],multiplier,impliedProbability:prob,score,userResearched,hasUSPrice});
         }
       }
@@ -86,7 +94,8 @@
         const side=m.selectedSide;
         const price=m.prices[side];
         const research=(m.modelP!==null&&m.edge>0)?`User-provided estimate ${pct(m.modelP)}; not independently verified`:'Market favorite only — research still needed';
-        return `<div class="qc-leg"><span class="qc-number">${k+1}</span><div><strong>${escapeHTML(m.teams[side])} to win</strong><small>${escapeHTML(m.teams.join(' vs '))} · ${escapeHTML(m.sport)} · ${escapeHTML(timeString(m.start))}</small><small>${escapeHTML(research)} · ${escapeHTML(marketSource(m))}</small></div><span class="qc-odds">${(1/price).toFixed(2)}×</span></div>`;
+        const execution=m.unverified?' · execution data UNVERIFIED':' · execution metadata available';
+        return `<div class="qc-leg"><span class="qc-number">${k+1}</span><div><strong>${escapeHTML(m.teams[side])} to win</strong><small>${escapeHTML(m.teams.join(' vs '))} · ${escapeHTML(m.sport)} · ${escapeHTML(timeString(m.start))}</small><small>${escapeHTML(research)}${escapeHTML(execution)} · ${escapeHTML(marketSource(m))}</small></div><span class="qc-odds">${(1/price).toFixed(2)}×</span></div>`;
       }).join('');
       return `<article class="qc-card"><div class="qc-head"><div><small>COMBO DRAFT ${i+1} · ${ordered.length} LEGS</small><h3>≈ ${s.multiplier.toFixed(2)}× <span class="qc-caveat">indicative</span></h3></div><span>${fmtUSD(stake)} → ${fmtUSD(stake*s.multiplier)}</span></div><div class="qc-legs">${places}</div><p class="helper">Quote-product implied chance ≈ ${pct(s.impliedProbability)} (assumes independent legs). This is not a validated true win probability or an executable Polymarket US quote. ${s.userResearched}/${s.legs.length} legs have a user-entered favorable research estimate.</p><div class="row-actions wrap"><button class="ghost-btn small" data-qc-copy="${i}">Copy all picks</button><button class="ghost-btn small" data-qc-log="${i}">Log an actual placed combo</button><a class="primary-btn small" href="https://polymarket.us/" target="_blank" rel="noopener noreferrer">Open Polymarket US ↗</a></div></article>`;
     }).join('');
