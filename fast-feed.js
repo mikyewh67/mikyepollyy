@@ -62,7 +62,15 @@ async function scan(){
       const key=job.source+':'+(original.id||original.slug);if(!original.id&&!original.slug)continue;
       if(!seenEvents.has(key))seenEvents.set(key,adapt(original,job.source,job.tag));
     }
-    const markets=[];for(const event of seenEvents.values()){const items=normalise(event);if(event._edgeSource==='us')for(const market of items)market.url='https://polymarket.us/event/'+encodeURIComponent(event.slug||'');markets.push(...items);}
+    const markets=[];for(const event of seenEvents.values()){const items=normalise(event);
+      if(!items.length&&Array.isArray(event.markets)&&event.markets.length){
+        const hit=String(event.title||'').match(/^(.+?)\s+(?:vs\.?|versus|@)\s+(.+?)(?:\s*\([^)]*\))?$/i);
+        if(hit&&event.closed!==true&&event.ended!==true){
+          const m=event.markets.find(x=>/moneyline|winner|match/i.test(String(x.sportsMarketType||x.sportsMarketTypeV2||x.question||'')))||event.markets[0];
+          items.push({id:'browse-'+event._edgeSource+'-'+String(event.id||event.slug),matchId:'browse-'+String(event.id||event.slug),sport:event._sportGuess||'Other',league:event.seriesSlug||event.category||'Sports',teams:[hit[1].trim(),hit[2].trim()],prices:[],liquidity:null,spread:null,start:event.gameStartTime||m.gameStartTime||event.eventDate||null,live:event.live===true,open:event.active!==false&&event.closed!==true&&m.closed!==true&&m.active!==false,url:event._edgeSource==='us'?'https://polymarket.us/event/'+encodeURIComponent(event.slug||''):'https://polymarket.com/event/'+encodeURIComponent(event.slug||''),source:'browse',technicalReject:'Winner prices not verified — browse only'});
+        }
+      }
+      if(event._edgeSource==='us')for(const market of items)market.url='https://polymarket.us/event/'+encodeURIComponent(event.slug||'');markets.push(...items);}
     window.EdgeboardDebug.setMarkets(markets);
     render();
     if(info)info.textContent=seenEvents.size+' events checked · '+markets.length+' markets · '+finished+'/'+jobs.length+' feeds complete. All games also shows markets rejected by your pick rules.';
@@ -74,6 +82,6 @@ async function scan(){
   }finally{busy=false;if(refresh)refresh.disabled=false;}
 }
 window.EdgeV3={scan,render};
-document.addEventListener('click',e=>{const button=e.target.closest('[data-sport],[data-window]');if(button)setTimeout(()=>{chosen=button.dataset.sport||chosen;render();},0);});
+document.addEventListener('click',e=>{const button=e.target.closest('[data-sport],[data-window]');if(button)setTimeout(()=>{chosen=button.dataset.sport||chosen;render();if(button.dataset.sport)scan();},0);});
 document.addEventListener('input',e=>{if(e.target.id==='gameSearch'||e.target.id==='browsePassed')render();});
 })();
