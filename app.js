@@ -244,6 +244,19 @@
     window.addEventListener('focus',()=>{if(now()-lastScan>120000)scanMarkets();});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&now()-lastScan>120000)scanMarkets();});}
   function startup(){installTelegram();registerWorker();setupEvents();fillSettings();renderWindow();refreshView();renderTracker();renderGoals();setInterval(updateCountdowns,1000);setInterval(()=>{if(!document.hidden&&now()-lastScan>=60000)scanMarkets();},60000);scanMarkets();}
   // Used by local smoke tests without adding analytics or third-party code.
-  window.EdgeboardDebug={screenOne,normaliseEvent,parseJSONArray,readPaste,ledger,setMarkets(items){rawMarkets=dedupe(items);lastScan=now();hasScanned=true;refreshView();},get rawMarkets(){return rawMarkets;},get combos(){return combos;},get data(){return data;},get passed(){return passed;},openWagerLog(m,stake,price,comboMode='MANUAL'){if(!(price>0&&price<1))return false;const side=m.selectedSide??m.favorite??0;fillLog(null,null,null,{...m,favorite:side,underdog:1-side});$('logStake').value=Number(stake).toFixed(2);$('logOdds').value=(1/price).toFixed(4);$('logSport').value=m.sport;$('logMatches').value=m.teams[side]+' over '+m.teams[1-side];$('logMode').value=comboMode;$('logStatus').value='pending';$('logPayout').value='';if(m.source!=='gamma')pendingMarketLink=null;return true;}};
+  window.EdgeboardDebug={screenOne,normaliseEvent,parseJSONArray,readPaste,ledger,setMarkets(items){rawMarkets=dedupe(items);lastScan=now();hasScanned=true;refreshView();document.dispatchEvent(new Event('edgeboard:feed-updated'));},get rawMarkets(){return rawMarkets;},get combos(){return combos;},get data(){return data;},get passed(){return passed;},openComboLog(combo,stake){
+    if(!combo?.legs?.length)return false;
+    fillLog();
+    $('logStake').value=Number(stake).toFixed(2);
+    $('logOdds').value=Number(combo.multiplier).toFixed(4);
+    $('logSport').value=[...new Set(combo.legs.map(x=>x.sport))].join('+');
+    $('logMatches').value=combo.legs.map(p=>p.teams[p.selectedSide]+' over '+p.teams[1-p.selectedSide]).join(' | ');
+    $('logMode').value='BALANCED';
+    $('logStatus').value='pending';
+    $('logPayout').value='';
+    pendingMarketLink=null;
+    toast('Enter the ACTUAL combo odds and stake from your filled Polymarket ticket, not the estimate.');
+    return true;
+  },openWagerLog(m,stake,price,comboMode='MANUAL'){if(!(price>0&&price<1))return false;const side=m.selectedSide??m.favorite??0;fillLog(null,null,null,{...m,favorite:side,underdog:1-side});$('logStake').value=Number(stake).toFixed(2);$('logOdds').value=(1/price).toFixed(4);$('logSport').value=m.sport;$('logMatches').value=m.teams[side]+' over '+m.teams[1-side];$('logMode').value=comboMode;$('logStatus').value='pending';$('logPayout').value='';if(m.source!=='gamma')pendingMarketLink=null;return true;}};
   startup();
 })();
