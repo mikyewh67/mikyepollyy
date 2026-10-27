@@ -9,6 +9,24 @@ export default {
     if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors()});
     if(request.method!=='GET')return reply({error:'GET only'},405);
     const u=new URL(request.url);
+
+    // Read-only ESPN team-history proxy (unofficial public feed; no predictions).
+    if(u.pathname.startsWith('/research/espn/')){
+      const path=u.pathname.slice('/research/espn'.length);
+      const match=path.match(/^\/(basketball|football|baseball|hockey)\/(nba|wnba|mens-college-basketball|nfl|college-football|mlb|nhl)\/teams(?:\/([0-9]+)\/schedule)?$/);
+      if(!match)return reply({error:'Unsupported research path'},404);
+      const valid={basketball:['nba','wnba','mens-college-basketball'],football:['nfl','college-football'],baseball:['mlb'],hockey:['nhl']};
+      if(!valid[match[1]].includes(match[2]))return reply({error:'Invalid sport/league'},404);
+      const opts=new URLSearchParams();
+      if(u.searchParams.has('season')&&/^20\d{2}$/.test(u.searchParams.get('season')))opts.set('season',u.searchParams.get('season'));
+      if(!match[3])opts.set('limit','500');
+      const url='https://site.api.espn.com/apis/site/v2/sports'+path+(opts.size?'?'+opts:'');
+      try{
+        const res=await fetch(url,{headers:{Accept:'application/json'},cf:{cacheEverything:true,cacheTtl:600}});
+        if(!res.ok)return reply({error:'Stats upstream HTTP '+res.status},res.status);
+        return new Response(res.body,{status:200,headers:{...cors(),'Content-Type':'application/json; charset=utf-8','Cache-Control':'public, max-age=300'}});
+      }catch{return reply({error:'Research data unavailable'},502);}
+    }
     const isUS=u.pathname.startsWith('/us/');const upstreamPath=isUS?u.pathname.slice(3):u.pathname;
     if(isUS?!US_PATHS.has(upstreamPath):!PATHS.has(upstreamPath))return reply({error:'Endpoint not allowed'},404);
     const qs=new URLSearchParams();
