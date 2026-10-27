@@ -32,7 +32,7 @@
     }).slice(0,24);
   }
   function generate(){
-    const markets=eligibleMarkets(),maxDepth=5,minTarget=3,maxTarget=5;
+    const markets=eligibleMarkets(),maxDepth=5,target=Number($('qcTarget')?.value)||3,minTarget=Math.max(1.65,target*.86),maxTarget=Math.min(5.5,target*1.13);
     const suggestions=[], seen=new Set(),maxCandidates=4000;
     function go(legs,next,prob){
       if(suggestions.length>maxCandidates)return;
@@ -43,7 +43,7 @@
           const userResearched=legs.filter(p=>p.edge>0).length;
           const averageQuality=legs.reduce((s,p)=>s+(p.confidence==='High'?1:p.confidence==='Med'?.5:0),0)/legs.length;
           const hasUSPrice=legs.filter(m=>m.source==='us'||String(m.url||'').includes('polymarket.us')).length;
-          const score=Math.abs(Math.log(multiplier/3.6))*5 + legs.length*.15 + age*.22 - userResearched*.12 - averageQuality*.25 - hasUSPrice*.08;
+          const score=Math.abs(Math.log(multiplier/target))*5 + legs.length*.15 + age*.22 - userResearched*.12 - averageQuality*.25 - hasUSPrice*.08;
           suggestions.push({id:legs.map(m=>m.id).sort().join('|'),legs:[...legs],multiplier,impliedProbability:prob,score,userResearched,hasUSPrice});
         }
       }
@@ -77,7 +77,7 @@
     const options=data()?.settings||{};
     const stake=Number(options.staking==='branch'?options.branchStake:options.flatStake)||5;
     if(!found.length){
-      box.innerHTML=`<div class="empty-state"><h3>No verified ${escapeHTML($('qcSport')?.value||'')} combo matches 3–5× in this window</h3><p>Try All sports or extend the Picks start window. No matches or odds are invented. Check connection status and the Rejected list.</p></div>`;
+      box.innerHTML=`<div class="empty-state"><h3>No verified ${escapeHTML($('qcSport')?.value||'')} combo matches near ${target}× in this window</h3><p>Try All sports or extend the Picks start window. No matches or odds are invented. Check connection status and the Rejected list.</p></div>`;
       return;
     }
     box.innerHTML=found.map((s,i)=>{
@@ -110,7 +110,7 @@
     const sport=$('qcSport');
     if(sport)sport.innerHTML=sports.map(x=>`<option value="${escapeHTML(x)}">${escapeHTML(x)}</option>`).join('');
     $('qcBuild').addEventListener('click',display);
-    $('qcSport')?.addEventListener('change',display);
+    $('qcSport')?.addEventListener('change',display);$('qcTarget')?.addEventListener('change',display);
     document.addEventListener('click',e=>{
       const cp=e.target.closest('[data-qc-copy]');
       if(cp){copy(Number(cp.dataset.qcCopy));return;}
